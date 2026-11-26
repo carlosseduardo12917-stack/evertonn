@@ -44,6 +44,7 @@ function entrar(event){
     if(!conta){ msg.textContent = 'E-mail ou senha incorretos.'; return; }
     localStorage.setItem(sessaoKey, email);
     mostrarSite();
+    if(ehAdministrador()) abrirAdmin();
 }
 
 function criarConta(event){
@@ -85,6 +86,7 @@ function mostrarSite(){
     // A tela inicial permanece pública; apenas os conteúdos exigem identificação.
     document.getElementById('botaoIdentificacao').classList.add('hidden');
     document.getElementById('botaoSair').classList.remove('hidden');
+    atualizarVisibilidadeAdmin();
     document.body.style.overflow = '';
     const email = localStorage.getItem(sessaoKey);
     const usuario = document.getElementById('usuarioLogado');
@@ -97,7 +99,9 @@ function mostrarVisitante(){
     // A tela inicial fica visível para visitantes, sem bloquear sua apresentação.
     document.getElementById('botaoIdentificacao').classList.remove('hidden');
     document.getElementById('botaoSair').classList.add('hidden');
+    document.getElementById('botaoAdmin').classList.add('hidden');
     document.getElementById('usuarioLogado').textContent = '';
+    document.getElementById('paginaAdmin').classList.add('hidden');
     document.body.style.overflow = '';
 }
 
@@ -123,13 +127,14 @@ function abrirArea(area){
     const lista = document.getElementById('listaConteudos');
     // Cada conteúdo vira uma opção para o aluno marcar o que quer no cronograma
     lista.innerHTML = '<p class="ajuda-dias">Marque os assuntos que você quer incluir no seu cronograma.</p>' +
-        conteudos[area].map(item => `<label class="dia-option" style="margin-bottom:8px"><input type="checkbox" class="assunto-check" value="${item}"><span>${item}</span></label>`).join('');
+        obterConteudos()[area].map(item => `<label class="dia-option" style="margin-bottom:8px"><input type="checkbox" class="assunto-check" value="${escaparHtml(item)}"><span>${escaparHtml(item)}</span></label>`).join('');
     document.getElementById('resultadoPlano').classList.add('hidden');
     window.scrollTo({top:0, behavior:'smooth'});
 }
 
 function voltarInicio(){
     document.getElementById('paginaArea').classList.add('hidden');
+    document.getElementById('paginaAdmin').classList.add('hidden');
     document.getElementById('paginaInicial').classList.remove('hidden');
     document.getElementById('sobre').classList.remove('hidden');
     window.scrollTo({top:0, behavior:'smooth'});
@@ -168,7 +173,152 @@ function gerarPlano(){
     document.getElementById('resultadoPlano').scrollIntoView({behavior:'smooth'});
 }
 
+
+/* =========================
+   ADMINISTRAÇÃO
+   ========================= */
+const adminEmail = 'admin@site.com';
+const adminSenha = '1234';
+const conteudosKey = 'cronoENEM_conteudos';
+
+function obterConteudos(){
+    try{
+        const salvos = JSON.parse(localStorage.getItem(conteudosKey));
+        if(salvos && typeof salvos === 'object') return salvos;
+    }catch(e){}
+    return JSON.parse(JSON.stringify(conteudos));
+}
+
+function salvarConteudos(dados){
+    localStorage.setItem(conteudosKey, JSON.stringify(dados));
+}
+
+function ehAdministrador(){
+    return (localStorage.getItem(sessaoKey) || '').toLowerCase() === adminEmail;
+}
+
+function garantirContaAdmin(){
+    const contas = obterContas();
+    const existente = contas.find(c => c.email === adminEmail);
+    if(!existente){
+        contas.push({email: adminEmail, senha: adminSenha, admin: true});
+        salvarContas(contas);
+    }else if(existente.senha !== adminSenha || !existente.admin){
+        existente.senha = adminSenha;
+        existente.admin = true;
+        salvarContas(contas);
+    }
+}
+
+function abrirAdmin(){
+    if(!ehAdministrador()){
+        alert('Acesso restrito ao administrador.');
+        return;
+    }
+    document.getElementById('paginaInicial').classList.add('hidden');
+    document.getElementById('paginaArea').classList.add('hidden');
+    document.getElementById('sobre').classList.add('hidden');
+    document.getElementById('paginaAdmin').classList.remove('hidden');
+    renderizarAdmin();
+    window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function renderizarAdmin(){
+    const container = document.getElementById('adminAreas');
+    if(!container) return;
+    const dados = obterConteudos();
+
+    container.innerHTML = Object.keys(dadosAreas).map(area => {
+        const itens = Array.isArray(dados[area]) ? dados[area] : [];
+        return `
+            <div class="admin-area">
+                <div class="admin-area-titulo">
+                    <h4>${dadosAreas[area].nome}</h4>
+                    <button class="admin-btn-adicionar" type="button" onclick="adicionarAssunto('${area}')">
+                        <i class="fa-solid fa-plus"></i> Adicionar assunto
+                    </button>
+                </div>
+                <div>
+                    ${
+                        itens.length
+                        ? itens.map((item, index) => `
+                            <div class="admin-assunto">
+                                <input id="admin-${area}-${index}" type="text" value="${escaparHtml(item)}" aria-label="Assunto ${index + 1}">
+                                <div class="admin-acoes">
+                                    <button class="admin-btn admin-btn-salvar" type="button" onclick="editarAssunto('${area}', ${index})">
+                                        <i class="fa-solid fa-check"></i> Salvar
+                                    </button>
+                                    <button class="admin-btn admin-btn-excluir" type="button" onclick="excluirAssunto('${area}', ${index})">
+                                        <i class="fa-solid fa-trash"></i> Excluir
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')
+                        : '<p class="admin-vazio">Nenhum assunto cadastrado nesta área.</p>'
+                    }
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function escaparHtml(valor){
+    return String(valor)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/'/g,'&#039;');
+}
+
+function editarAssunto(area, index){
+    if(!ehAdministrador()) return;
+    const campo = document.getElementById(`admin-${area}-${index}`);
+    const novoNome = campo ? campo.value.trim() : '';
+    if(!novoNome){
+        alert('Digite um nome para o assunto.');
+        return;
+    }
+    const dados = obterConteudos();
+    dados[area][index] = novoNome;
+    salvarConteudos(dados);
+    renderizarAdmin();
+}
+
+function excluirAssunto(area, index){
+    if(!ehAdministrador()) return;
+    const dados = obterConteudos();
+    const nome = dados[area][index];
+    if(!confirm(`Deseja excluir o assunto "${nome}"?`)) return;
+    dados[area].splice(index, 1);
+    salvarConteudos(dados);
+    renderizarAdmin();
+}
+
+function adicionarAssunto(area){
+    if(!ehAdministrador()) return;
+    const nome = prompt(`Digite o novo assunto para ${dadosAreas[area].nome}:`);
+    if(nome === null) return;
+    const novoNome = nome.trim();
+    if(!novoNome){
+        alert('Digite um nome para o assunto.');
+        return;
+    }
+    const dados = obterConteudos();
+    dados[area].push(novoNome);
+    salvarConteudos(dados);
+    renderizarAdmin();
+}
+
+function atualizarVisibilidadeAdmin(){
+    const botao = document.getElementById('botaoAdmin');
+    if(botao) botao.classList.toggle('hidden', !ehAdministrador());
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
+    garantirContaAdmin();
+    if(!localStorage.getItem(conteudosKey)) salvarConteudos(conteudos);
     document.getElementById('dias').addEventListener('change', atualizarDias);
     document.querySelectorAll('#diasSemana input').forEach(input => {
         input.addEventListener('change', () => {
@@ -182,4 +332,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if(localStorage.getItem(sessaoKey)) mostrarSite();
     else mostrarVisitante();
+    atualizarVisibilidadeAdmin();
 });

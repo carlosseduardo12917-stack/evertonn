@@ -83,3 +83,30 @@ footer{text-align:center;background:var(--marrom);color:#fff;padding:20px;font-s
 .auth-card{position:relative}
 .auth-close{position:absolute;top:13px;right:15px;width:34px;height:34px;border:0;border-radius:50%;background:var(--bege);color:var(--vinho);font-size:18px;display:flex;align-items:center;justify-content:center}
 .auth-close:hover{background:var(--rosa-suave)}
+
+/* PAINEL ADMINISTRATIVO — adicionado sem alterar o layout existente */
+.paginaAdmin{max-width:1250px}
+.admin-painel{background:var(--branco);border:1px solid var(--borda);border-radius:17px;padding:24px}
+.admin-cabecalho{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.admin-cabecalho h3{color:var(--vinho);margin-bottom:5px}
+.admin-cabecalho p{color:#78665e}
+.admin-area{border:1px solid var(--borda);border-radius:14px;padding:18px;margin-bottom:16px;background:#fffdfb}
+.admin-area:last-child{margin-bottom:0}
+.admin-area-titulo{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:14px}
+.admin-area-titulo h4{color:var(--marrom);font-size:18px}
+.admin-assunto{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.admin-assunto input{flex:1;padding:10px 12px;border:1px solid #d9c9c0;border-radius:8px;background:#fff;color:var(--texto);outline:none}
+.admin-assunto input:focus{border-color:var(--vinho);box-shadow:0 0 0 3px rgba(117,37,50,.08)}
+.admin-acoes{display:flex;gap:7px}
+.admin-btn{border:0;border-radius:8px;padding:9px 11px;font-weight:700;cursor:pointer}
+.admin-btn-salvar{background:var(--vinho);color:#fff}
+.admin-btn-excluir{background:#f5e3e5;color:var(--vinho)}
+.admin-btn-adicionar{border:1px solid var(--vinho);background:transparent;color:var(--vinho);padding:8px 12px;border-radius:8px;font-weight:700}
+.admin-btn:hover{filter:brightness(.96)}
+.admin-vazio{font-size:13px;color:#8b7971;padding:8px 0}
+@media(max-width:600px){
+    .admin-assunto{align-items:stretch;flex-direction:column}
+    .admin-acoes{width:100%}
+    .admin-acoes .admin-btn{flex:1}
+    .admin-area-titulo{align-items:flex-start;flex-direction:column}
+}

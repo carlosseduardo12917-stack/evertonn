@@ -83,6 +83,7 @@
             <a href="#sobre">Sobre</a>
             <span id="usuarioLogado" style="font-size:13px;color:#806c64"></span>
             <button id="botaoIdentificacao" class="logout" onclick="abrirAuth()">Identificar-se</button>
+            <button id="botaoAdmin" class="logout hidden" onclick="abrirAdmin()">Administração</button>
             <button id="botaoSair" class="logout hidden" onclick="sair()">Sair</button>
         </nav>
 
@@ -313,6 +314,25 @@
 
         </section>
 
+    </main>
+
+
+    <!-- PAINEL ADMINISTRATIVO -->
+    <main id="paginaAdmin" class="paginaAdmin hidden">
+        <button class="voltar" onclick="voltarInicio()">
+            <i class="fa-solid fa-arrow-left"></i>
+            Voltar
+        </button>
+
+        <section class="admin-painel">
+            <div class="admin-cabecalho">
+                <div>
+                    <h3><i class="fa-solid fa-user-shield"></i> Painel administrativo</h3>
+                    <p>Gerencie os assuntos disponíveis no CronoENEM.</p>
+                </div>
+            </div>
+            <div id="adminAreas"></div>
+        </section>
     </main>
 
 
